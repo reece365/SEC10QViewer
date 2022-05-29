@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<script src="https://kit.fontawesome.com/c03a700e83.js" crossorigin="anonymous"></script>
+
+<head>
+	<title>10Q Viewer</title>
+	<style>
+		body {
+			background-color: rgb(32, 29, 58);
+		}
+
+		h1,
+		h3 {
+			font-family: 'Ubuntu', sans-serif;
+			text-align: center;
+			color: white;
+		}
+
+		#inputDiv {
+			display: flex;
+			justify-content: center;
+		}
+
+		input {
+			height: 48px;
+			width: 100%;
+			border-radius: 30px;
+			border: 3px solid white;
+			background-color: rgb(68, 68, 68);
+			color: white;
+			padding-left: 15px;
+			transition: 200ms;
+			margin-bottom: 0px;
+		}
+
+		.inputSuggestionsShown {
+			border-radius: 30px 30px 0px 0px;
+		}
+
+		button {
+			border: 3px solid white;
+			border-radius: 30px;
+			height: 48px;
+			width: 48px;
+			margin-left: 10px;
+			background-color: rgb(26, 115, 232);
+			transition: 200ms;
+			color: white;
+		}
+
+		button:hover {
+			background-color: rgb(23, 172, 241);
+			color: gray;
+		}
+
+		#searchBox {
+			display: block;
+			width: 40%;
+			margin-right: 15px;
+		}
+
+		#suggestionsDiv {
+			visibility: hidden;
+			width: 100%;
+			background-color: rgb(68, 68, 68);
+			margin-top: 0px;
+			border-radius: 0px 0px 30px 30px;
+			border: 3px solid white;
+			border-top: 1px solid white;
+			padding-right: 6px;
+			padding-left: 6px;
+			padding-top: 20px;
+		}
+
+		.suggestionDiv {
+			text-align: left;
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+		}
+
+		.suggestionArrow {
+			color: white;
+			font-size: 20px;
+			margin-top: 16px;
+			margin-right: 10px
+		}
+
+		.suggestionArrow:hover {
+			color: gray;
+		}
+
+		.buttonArrow {
+			font-size: 100%;
+		}
+
+		.suggestionText {
+			color: white;
+			font-family: 'Ubuntu', sans-serif;
+			margin-left: 10px;
+		}
+	</style>
+	<script>
+		let suggestionElementList = [];
+		let countdownTimer = 100;
+		window.onload = () => {
+			let searchInput = document.getElementById("searchInput");
+			let suggestionsDiv = document.getElementById("suggestionsDiv");
+			document.getElementById("searchInput").addEventListener("keyup", () => {
+				getSuggestionData();
+			});
+		}
+		function showSuggestions() {
+			searchInput.classList.add("inputSuggestionsShown");
+			suggestionsDiv.style.visibility = "visible";
+		}
+
+		function hideSuggestions() {
+			searchInput.classList.remove("inputSuggestionsShown");
+			suggestionsDiv.style.visibility = "hidden";
+		}
+
+		function setSuggestionsData(data) {
+			try {
+				data.hits.hits.forEach((item, index) => {
+					if (item.title != "") {
+						let newSuggestion = document.createElement("div");
+						let suggestionTitle = document.createElement("p");
+						let hr = document.createElement("hr");
+						let br = document.createElement("br");
+						let arrow = document.createElement("i");
+						suggestionsDiv.appendChild(newSuggestion);
+						newSuggestion.classList.add("suggestionDiv");
+						arrow.classList.add("fa-solid", "fa-arrow-right", "suggestionArrow")
+						suggestionTitle.innerHTML = item._source.entity;
+						suggestionTitle.classList.add("suggestionText");
+						newSuggestion.appendChild(suggestionTitle);
+						newSuggestion.appendChild(arrow);
+						suggestionElementList.push(newSuggestion);
+						if (index != data.hits.hits.length - 1) {
+							suggestionsDiv.appendChild(hr);
+							suggestionElementList.push(hr);
+						} else {
+							suggestionsDiv.appendChild(br);
+							suggestionElementList.push(br);
+						}
+					}
+				});
+			} catch (e) {
+				console.log(`Error parsing suggestion data: ${e}`);
+			}
+		}
+
+		function getSuggestionData(index) {
+			clearSuggestionData();
+			if (searchInput.value.length > 0) {
+				const url = 'https://corsproxy.io/?' + encodeURIComponent('https://efts.sec.gov/LATEST/search-index');
+				const bodyData = {
+					"keysTyped": searchInput.value
+				};
+				const options = {
+					method: 'POST',
+					body: JSON.stringify(bodyData),
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				}
+
+				fetch(url, options)
+					.then(res => res.json())
+					.then(res => setSuggestionsData(res));
+				showSuggestions();
+			} else {
+				hideSuggestions();
+			}
+		}
+
+		function clearSuggestionData() {
+			suggestionElementList.forEach(item => {
+				suggestionsDiv.removeChild(item);
+			});
+			suggestionElementList = [];
+		}
+
+		//When key pressed reest timer
+
+		function startCountdown() {
+			countdownTimer = 500;
+			let timer = setInterval(() => {
+				countdownTimer -= 10;
+				if (countdownTimer == 0) {
+					clearInterval(timer);
+					getSuggestionData
+				}
+			}, 10);
+		}
+
+	</script>
+</head>
+
+<body>
+	<h1>10-Q Filing Viewer</h1>
+	<h3>Enter a company name or ticker to search for 10-Q filings</h3>
+	<div id="inputDiv">
+		<div id="searchBox">
+			<input id="searchInput" type="text" id="ticker" placeholder="Apple Inc.">
+			<div id="suggestionsDiv">
+
+			</div>
+		</div>
+		<button onclick=""><i class="fa-solid fa-arrow-right buttonArrow"></i></button>
+	</div>
+</body>
+
+</html>
